@@ -1,6 +1,8 @@
 package com.ssam.hyunchat;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -20,59 +22,56 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+    EditText etId, etPassword;
     private FirebaseAuth mAuth;
-    Button btn_login, btn_register;
-    EditText et_id, et_password;
-    String stEmail, stPassword;
     ProgressBar progressBar;
-
-    // 주석 추가 테스트 - 다시 지우는 테스트...
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
-        et_id = findViewById(R.id.et_id);
-        et_password = findViewById(R.id.et_password);
-        progressBar = findViewById(R.id.progressBar);
-
-        btn_login = findViewById(R.id.btn_login);
-        btn_login.setOnClickListener(new View.OnClickListener() {
+        etId = (EditText) findViewById(R.id.et_id);
+        etPassword = (EditText)findViewById(R.id.et_password);
+        progressBar = (ProgressBar)findViewById(R.id.progressBar);
+        Button btnLogin = (Button)findViewById(R.id.btn_login);
+        btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stEmail = et_id.getText().toString();
-                stPassword = et_password.getText().toString();
+                final String stEmail = etId.getText().toString();
+                String stPassword = etPassword.getText().toString();
                 if(stEmail.isEmpty()){
-                    Toast.makeText(MainActivity.this, "이메일을 입력해 주세요.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Please insert Email", Toast.LENGTH_LONG).show();
                     return;
                 }
                 if(stPassword.isEmpty()){
-                    Toast.makeText(MainActivity.this, "비밀번호를 입력해 주세요.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Please insert Password", Toast.LENGTH_LONG).show();
                     return;
                 }
                 progressBar.setVisibility(View.VISIBLE);
                 mAuth.signInWithEmailAndPassword(stEmail, stPassword)
-                                    .addOnCompleteListener(MainActivity.this, new OnCompleteListener<AuthResult>() {
-                                @Override
+                        .addOnCompleteListener(MainActivity.this, new OnCompleteListener<AuthResult>() {
+                            @Override
                             public void onComplete(@NonNull Task<AuthResult> task) {
-                                    progressBar.setVisibility(View.GONE);
+                                progressBar.setVisibility(View.GONE);
                                 if (task.isSuccessful()) {
                                     // Sign in success, update UI with the signed-in user's information
                                     Log.d(TAG, "signInWithEmail:success");
                                     FirebaseUser user = mAuth.getCurrentUser();
-                                    String email = user.getEmail();
-                                    String name = user.getDisplayName();
-                                    Log.d(TAG, "email "+email+"name : "+name);
+                                    String stUserEmail = user.getEmail();
+                                    String stUserName = user.getDisplayName();
+                                    Log.d(TAG, "stUserEmail: "+stUserEmail+", stUserName : "+stUserName);
 
+                                    SharedPreferences sharedPref = getSharedPreferences("shared", Context.MODE_PRIVATE);
+                                    SharedPreferences.Editor editor = sharedPref.edit();
+                                    editor.putString("email", stUserEmail);
+                                    editor.commit();
+
+                                    Intent in = new Intent(MainActivity.this, TabActivity.class);
+                                    in.putExtra("email", stEmail);
+                                    startActivity(in);
 //                                    updateUI(user);
-                                    Intent intent = new Intent(MainActivity.this, TabActivity.class);
-                                    intent.putExtra("EMAIL", stEmail);
-                                    startActivity(intent);
-
-
                                 } else {
                                     // If sign in fails, display a message to the user.
                                     Log.w(TAG, "signInWithEmail:failure", task.getException());
@@ -84,27 +83,28 @@ public class MainActivity extends AppCompatActivity {
                                 // ...
                             }
                         });
+//                Toast.makeText(MainActivity.this,"Login",Toast.LENGTH_LONG).show();
 
             }
         });
 
-        btn_register = findViewById(R.id.btn_register);
-        btn_register.setOnClickListener(new View.OnClickListener() {
+
+        Button btnRegister = (Button)findViewById(R.id.btn_register);
+        btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stEmail = et_id.getText().toString();
-                stPassword = et_password.getText().toString();
-                progressBar.setVisibility(View.VISIBLE);
+                String stEmail = etId.getText().toString();
+                String stPassword = etPassword.getText().toString();
                 if(stEmail.isEmpty()){
-                    Toast.makeText(MainActivity.this, "이메일을 입력해 주세요.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Please insert Email", Toast.LENGTH_LONG).show();
                     return;
-
                 }
                 if(stPassword.isEmpty()){
-                    Toast.makeText(MainActivity.this, "비밀번호를 입력해 주세요.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "Please insert Password", Toast.LENGTH_LONG).show();
                     return;
                 }
-                Toast.makeText(MainActivity.this, "이메일 :" + stEmail + ", 비멀번호 : " + stPassword, Toast.LENGTH_SHORT).show();
+                progressBar.setVisibility(View.VISIBLE);
+//                Toast.makeText(MainActivity.this, "Email : "+stEmail+", password : "+stPassword, Toast.LENGTH_LONG).show();
                 mAuth.createUserWithEmailAndPassword(stEmail, stPassword)
                         .addOnCompleteListener(MainActivity.this, new OnCompleteListener<AuthResult>() {
                             @Override
@@ -129,7 +129,9 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
     }
+
 
     @Override
     public void onStart() {

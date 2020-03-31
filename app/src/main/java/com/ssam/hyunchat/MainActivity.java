@@ -26,6 +26,8 @@ public class MainActivity extends AppCompatActivity {
     String stEmail, stPassword;
     ProgressBar progressBar;
 
+    // 주석 추가 테스트
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
